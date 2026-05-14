@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nod Scroll — Scroll reels hands-free with a head nod</title>
+  <meta name="description" content="Watch Facebook Reels, YouTube Shorts, TikTok, and Instagram Reels hands-free. Nod your head to scroll. Camera processing stays on-device.">
+  <style>
+    :root {
+      --bg: #0a0d18;
+      --bg-2: #121726;
+      --card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #e8ecf3;
+      --muted: #8a93a6;
+      --accent: #60c86e;
+      --accent-2: #7ad889;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-2); }
+    .container { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10, 13, 24, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+    }
+    .logo {
+      font-weight: 800; font-size: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .logo-mark {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--bg-2); display: inline-flex;
+      align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+    }
+    .logo-mark::before {
+      content: ''; width: 8px; height: 8px;
+      border-right: 2px solid var(--accent);
+      border-bottom: 2px solid var(--accent);
+      transform: rotate(45deg); margin-top: -3px;
+    }
+    nav a.nav-link { color: var(--muted); font-size: 14px; margin-left: 20px; }
+    nav a.nav-link:hover { color: var(--text); }
+
+    /* Hero */
+    .hero { padding: 80px 0 60px; text-align: center; }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 56px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 18px;
+      background: linear-gradient(180deg, #fff 0%, #b8c1d4 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p.sub {
+      font-size: clamp(16px, 2.2vw, 19px);
+      color: var(--muted);
+      max-width: 580px; margin: 0 auto 32px;
+    }
+    .cta-row {
+      display: flex; gap: 12px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 13px 22px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.1s, background 0.15s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: var(--accent); color: #0a0d18;
+    }
+    .btn-primary:hover { background: var(--accent-2); color: #0a0d18; }
+    .btn-secondary {
+      background: var(--card); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.07); }
+    .price-badge {
+      display: inline-block;
+      font-size: 13px; color: var(--muted);
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .price-badge strong { color: var(--accent); }
+
+    /* Demo */
+    .demo {
+      margin: 20px auto;
+      max-width: 640px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .demo .placeholder {
+      aspect-ratio: 16 / 10;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px;
+    }
+    .demo .placeholder strong { color: var(--text); font-size: 15px; }
+    .demo .placeholder span  { font-size: 13px; }
+
+    /* Sections */
+    section { padding: 60px 0; }
+    section h2 {
+      font-size: clamp(24px, 4vw, 32px);
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    section .lead {
+      color: var(--muted); margin-bottom: 32px;
+      max-width: 600px;
+    }
+
+    /* How it works */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .step-num {
+      width: 28px; height: 28px;
+      background: var(--accent); color: #0a0d18;
+      border-radius: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .step h3 { font-size: 16px; margin-bottom: 6px; }
+    .step p  { font-size: 14px; color: var(--muted); }
+
+    /* Privacy callout */
+    .privacy-banner {
+      background: linear-gradient(135deg, rgba(96,200,110,0.08), rgba(96,200,110,0.02));
+      border: 1px solid rgba(96,200,110,0.2);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+    }
+    .privacy-banner h3 {
+      color: var(--accent); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .privacy-banner h3::before {
+      content: '🔒'; font-size: 16px;
+    }
+    .privacy-banner p { color: var(--text); font-size: 15px; }
+
+    /* FAQ */
+    .faq-item {
+      border-top: 1px solid var(--border);
+      padding: 18px 0;
+    }
+    .faq-item summary {
+      font-weight: 600; cursor: pointer; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 16px;
+    }
+    .faq-item summary::after { content: '+'; color: var(--muted); }
+    .faq-item[open] summary::after { content: '−'; }
+    .faq-item p {
+      color: var(--muted); margin-top: 10px;
+      font-size: 14px; line-height: 1.6;
+    }
+
+    /* Final CTA */
+    .final-cta {
+      text-align: center;
+      padding: 80px 24px;
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-top: 40px;
+    }
+    .final-cta h2 { margin-bottom: 12px; }
+    .final-cta p  { color: var(--muted); margin-bottom: 24px; }
+
+    /* Footer */
+    footer {
+      padding: 32px 0 60px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer a { color: var(--muted); margin: 0 12px; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <div class="logo">
+        <span class="logo-mark"></span>
+        Nod Scroll
+      </div>
+      <div>
+        <a class="nav-link" href="#how-it-works">How it works</a>
+        <a class="nav-link" href="#faq">FAQ</a>
+        <a class="nav-link" href="#privacy">Privacy</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero container">
+    <div class="price-badge">Unlock unlimited · <strong>$0.99 one-time</strong></div>
+    <h1>Scroll reels with a head nod.</h1>
+    <p class="sub">Watch Facebook Reels, YouTube Shorts, TikTok, and Instagram Reels totally hands-free. Nod up for next, down for previous.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://buy.stripe.com/4gM5kCczf04R2lRdwX1wY00" target="_blank">Get unlimited — $0.99</a>
+      <!-- Replace href with your Chrome Web Store URL once published -->
+      <a class="btn btn-secondary" href="#how-it-works">Try free (3 scrolls)</a>
+    </div>
+    <div style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">
+      Free trial: 3 scrolls per site. One <strong style="color: var(--text)">$0.99</strong> unlock = unlimited scrolls everywhere, forever.
+    </div>
+
+    <div class="demo">
+      <video src="demo.mp4" autoplay muted loop playsinline
+             style="width: 100%; border-radius: 10px; display: block;"></video>
+    </div>
+  </header>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="container">
+    <h2>How it works</h2>
+    <p class="lead">Your webcam tracks the angle of your head in real time. A deliberate nod scrolls — anything else is ignored.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Install the extension</h3>
+        <p>One click. Available for Chrome, Edge, Brave, and Atlas.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Enable on any reel page</h3>
+        <p>Open Facebook Reels, YouTube Shorts, TikTok, or Instagram Reels. Hit Enable Tracking, grant camera permission.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Nod to scroll</h3>
+        <p>Lift your chin to advance, drop to go back. Adjust sensitivity with the slider until it feels right.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section id="privacy" class="container">
+    <h2>Privacy</h2>
+    <div class="privacy-banner">
+      <h3>Your camera feed never leaves your device.</h3>
+      <p>All face tracking happens locally in your browser using Google's MediaPipe model. We do not record, store, transmit, or have access to your camera feed in any way. No analytics, no telemetry, no servers involved.</p>
+    </div>
+    <p style="color: var(--muted); font-size: 14px;">
+      The only data persisted is your unlock code and free-trial counter, stored locally in your browser's <code>localStorage</code>. Nothing is sent to us or any third party.
+    </p>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="container">
+    <h2>FAQ</h2>
+
+    <details class="faq-item">
+      <summary>Is my webcam video uploaded anywhere?</summary>
+      <p>No. Face tracking runs entirely in your browser using on-device machine learning. The video feed never leaves your computer.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>What does the $0.99 unlock?</summary>
+      <p>Unlimited nod scrolls on all four supported sites — Facebook Reels, YouTube Shorts, TikTok, and Instagram Reels. One-time purchase, no subscription.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Why isn't there a free version forever?</summary>
+      <p>The model running in your browser uses your computer's GPU and the project costs real time to maintain across four sites that change their layouts constantly. The 3-free-scrolls trial lets you make sure it works on your machine before you spend a dollar.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Does it work on phones?</summary>
+      <p>Not yet — mobile browsers don't support extensions in a way that lets us run there. We're looking at iOS Safari and a possible standalone app.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>What if it doesn't work for me?</summary>
+      <p>Email us within 7 days of purchase and we'll refund you. No questions asked.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I use it on multiple computers?</summary>
+      <p>Yes — your unlock code works on any device. Just paste it into the extension on each machine.</p>
+    </details>
+  </section>
+
+  <!-- FINAL CTA -->
+  <div class="final-cta">
+    <h2>Try it free.</h2>
+    <p>Three free scrolls on every site, no signup, no card required.</p>
+    <a class="btn btn-primary" href="#install">Install Nod Scroll</a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div style="margin-bottom: 12px;">
+        <a href="mailto:hello@nodscroll.com">Contact</a>
+        <a href="#privacy">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+      © 2026 Nod Scroll. Built with respect for your camera.
+    </div>
+  </footer>
+
+</body>
+</html>
