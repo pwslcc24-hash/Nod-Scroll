@@ -192,7 +192,37 @@ const state = {
   freeUsedToday: 0,
 };
 
+// Reads use a two-pass strategy: synchronous localStorage first (so state is
+// hydrated immediately on page load, even mid-reload), then chrome.storage
+// for cross-site values. Writes go to BOTH stores. localStorage protects
+// against the page reloading before the async chrome.storage message round-
+// trip finishes; chrome.storage gives us cross-site (FB ↔ TikTok ↔ etc) sync.
+const LS_PREFIX = 'nodScroll_';
+const LS_KEYS = ['paid', 'code', 'deviceId', 'sensitivity', 'enabled',
+                 'freeUsedDate', 'freeUsedToday'];
+
+function readLocalStorage() {
+  const out = {};
+  for (const k of LS_KEYS) {
+    const v = localStorage.getItem(LS_PREFIX + k);
+    if (v === null) continue;
+    if (k === 'paid' || k === 'enabled') out[k] = v === 'true';
+    else if (k === 'sensitivity' || k === 'freeUsedToday') out[k] = parseInt(v, 10) || 0;
+    else out[k] = v;
+  }
+  return out;
+}
+function writeLocalStorage(patch) {
+  for (const k of Object.keys(patch)) {
+    try { localStorage.setItem(LS_PREFIX + k, String(patch[k])); } catch {}
+  }
+}
+
 function storageLoad() {
+  // Step 1 — synchronous hydration from localStorage (instant, page-local)
+  Object.assign(state, readLocalStorage());
+
+  // Step 2 — async hydration from chrome.storage (cross-site truth)
   return new Promise((resolve) => {
     const nonce = String(Math.random()) + Date.now();
     const handler = (e) => {
@@ -200,7 +230,25 @@ function storageLoad() {
           || e.data.type !== 'nodScrollStorageGetResult'
           || e.data.nonce !== nonce) return;
       window.removeEventListener('message', handler);
-      Object.assign(state, e.data.data || {});
+      const cs = e.data.data || {};
+      // Merge rules:
+      //  - paid: true from either source wins
+      //  - freeUsedToday for today: take the higher count (truth is whichever
+      //    site logged more recently)
+      const today = todayKey();
+      if (cs.paid)  state.paid = true;
+      if (cs.code)  state.code = cs.code;
+      if (cs.deviceId) state.deviceId = cs.deviceId;
+      if (cs.sensitivity) state.sensitivity = cs.sensitivity;
+      if (typeof cs.enabled === 'boolean') state.enabled = cs.enabled;
+      if (cs.freeUsedDate === today) {
+        const csN = cs.freeUsedToday || 0;
+        const lsN = state.freeUsedDate === today ? (state.freeUsedToday || 0) : 0;
+        state.freeUsedDate  = today;
+        state.freeUsedToday = Math.max(csN, lsN);
+      }
+      // Push merged state back to localStorage so it stays in sync
+      writeLocalStorage(state);
       resolve();
     };
     window.addEventListener('message', handler);
@@ -211,13 +259,21 @@ function storageLoad() {
 
 function storageSet(patch) {
   Object.assign(state, patch);
+  writeLocalStorage(patch);   // ← synchronous, instant persistence
   window.postMessage({
     type: 'nodScrollStorageSet', data: patch, nonce: String(Math.random()),
   }, '*');
 }
 
 // ── Paywall helpers ──────────────────────────────────────────────────────────
-function todayKey() { return new Date().toISOString().slice(0, 10); }
+// Local-time YYYY-MM-DD so "the day" matches the user's wall clock, not UTC.
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function isPaid() { return !!state.paid; }
 
