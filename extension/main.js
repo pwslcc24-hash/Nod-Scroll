@@ -517,6 +517,16 @@ function buildOverlay() {
       border-bottom: 1px solid rgba(255,255,255,0.07);
       cursor: grab; user-select: none;
     }
+    .nod-title-row { display: flex; align-items: center; gap: 6px; }
+    #nod-pro-badge {
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 1px 5px; border-radius: 4px;
+      background: rgba(96,200,110,0.18);
+      color: #7ad889;
+      border: 1px solid rgba(96,200,110,0.4);
+    }
+    #nod-pro-badge.hidden { display: none; }
     #nod-header:active { cursor: grabbing; }
     #nod-collapse-btn {
       background: none; border: none; color: #aaa; font-size: 16px;
@@ -580,6 +590,7 @@ function buildOverlay() {
     #nod-toggle-btn.on:hover  { background: #c62828; }
     #nod-trial { font-size: 10px; color: #888; text-align: center; margin-top: 2px; }
     #nod-trial.hidden { display: none; }
+    #nod-trial.paid { color: #7ad889; font-weight: 600; }
     /* Paywall card */
     #nod-paywall { padding: 12px 10px; display: flex; flex-direction: column; gap: 7px; }
     #nod-paywall.hidden { display: none; }
@@ -625,7 +636,10 @@ function buildOverlay() {
 
   const overlay = el('div', { id: 'nod-overlay' },
     el('div', { id: 'nod-header' },
-      el('span', { text: 'Nod Scroll' }),
+      el('div', { class: 'nod-title-row' },
+        el('span', { text: 'Nod Scroll' }),
+        el('span', { id: 'nod-pro-badge', class: 'hidden', text: 'PRO' })
+      ),
       el('button', { id: 'nod-collapse-btn', title: 'Collapse', text: '−' })
     ),
     el('div', { id: 'nod-body' },
@@ -680,12 +694,19 @@ function hidePaywall() {
   document.getElementById('nod-paywall').classList.add('hidden');
 }
 function updatePaywallCounter() {
-  const el = document.getElementById('nod-trial');
+  const el       = document.getElementById('nod-trial');
+  const proBadge = document.getElementById('nod-pro-badge');
   if (!el) return;
-  if (isPaid()) { el.className = 'hidden'; return; }
+  if (isPaid()) {
+    el.textContent = '✓ Unlimited — Pro';
+    el.className   = 'paid';
+    if (proBadge) proBadge.classList.remove('hidden');
+    return;
+  }
   const remaining = Math.max(0, FREE_SCROLLS_LIMIT - getFreeUsed());
   el.textContent = `Free trial: ${remaining}/${FREE_SCROLLS_LIMIT} scrolls left today`;
   el.className = '';
+  if (proBadge) proBadge.classList.add('hidden');
 }
 
 function setupOverlay() {
