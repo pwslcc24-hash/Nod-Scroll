@@ -265,6 +265,23 @@ function storageSet(patch) {
   }, '*');
 }
 
+// Live cross-site sync. When another tab (or this one) writes to chrome.storage,
+// content.js broadcasts the change here. We merge it into state and refresh
+// the UI so PRO status / trial counter / paywall update in real time without
+// needing the tab to be reloaded.
+window.addEventListener('message', (e) => {
+  if (e.source !== window || !e.data || e.data.type !== 'nodScrollStorageChanged') return;
+  const patch = e.data.patch || {};
+  Object.assign(state, patch);
+  writeLocalStorage(patch);
+  if (typeof updatePaywallCounter === 'function') updatePaywallCounter();
+  // If the user just paid in another tab, dismiss this tab's paywall.
+  if (state.paid && document.getElementById('nod-paywall')) {
+    const pw = document.getElementById('nod-paywall');
+    if (!pw.classList.contains('hidden')) hidePaywall();
+  }
+});
+
 // ── Paywall helpers ──────────────────────────────────────────────────────────
 // Local-time YYYY-MM-DD so "the day" matches the user's wall clock, not UTC.
 function todayKey() {

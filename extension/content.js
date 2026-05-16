@@ -16,6 +16,18 @@
   // main world on most reel sites, so main.js posts a message here and the
   // isolated-world content script does the actual fetch (allowed via the
   // extension's host_permissions).
+  // Real-time cross-site sync. When any tab (this one or another) writes to
+  // chrome.storage.local, push the changes to this tab's main-world overlay
+  // so PRO badge / trial counter / paywall update without needing a reload.
+  if (chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return;
+      const patch = {};
+      for (const k of Object.keys(changes)) patch[k] = changes[k].newValue;
+      window.postMessage({ type: 'nodScrollStorageChanged', patch }, '*');
+    });
+  }
+
   window.addEventListener('message', async (e) => {
     if (e.source !== window || !e.data) return;
     const { type, nonce } = e.data;
