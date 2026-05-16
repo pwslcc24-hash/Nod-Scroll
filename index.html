@@ -166,6 +166,19 @@
     .step h3 { font-size: 16px; margin-bottom: 6px; }
     .step p  { font-size: 14px; color: var(--muted); }
 
+    /* Generic tip callout */
+    .tip-banner {
+      background: linear-gradient(135deg, rgba(255,200,0,0.06), rgba(255,200,0,0.01));
+      border: 1px solid rgba(255,200,0,0.2);
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin: 20px 0 10px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .tip-banner .tip-icon { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+    .tip-banner strong { color: #ffd266; }
+    .tip-banner p { font-size: 14px; color: #c4cad6; }
+
     /* Privacy callout */
     .privacy-banner {
       background: linear-gradient(135deg, rgba(96,200,110,0.08), rgba(96,200,110,0.02));
@@ -247,10 +260,10 @@
     <div class="cta-row">
       <a class="btn btn-primary" href="https://buy.stripe.com/4gM5kCczf04R2lRdwX1wY00" target="_blank">Get unlimited — $0.99</a>
       <!-- Replace href with your Chrome Web Store URL once published -->
-      <a class="btn btn-secondary" href="/install.html">Try free (3 scrolls)</a>
+      <a class="btn btn-secondary" href="/install.html">Try free</a>
     </div>
     <div style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">
-      Free trial: 3 scrolls per site. One <strong style="color: var(--text)">$0.99</strong> unlock = unlimited scrolls everywhere, forever.
+      Free trial: 3 scrolls per day. One <strong style="color: var(--text)">$0.99</strong> unlock = unlimited scrolls everywhere, forever.
     </div>
 
     <div class="demo">
@@ -278,6 +291,52 @@
         <div class="step-num">3</div>
         <h3>Nod to scroll</h3>
         <p>Lift your chin to advance, drop to go back. Adjust sensitivity with the slider until it feels right.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTROLS -->
+  <section id="controls" class="container">
+    <h2>Inside the controls</h2>
+    <p class="lead">The overlay panel gives you full control. Here's what each piece does.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">·</div>
+        <h3>Pitch bar</h3>
+        <p>Shows the angle of your head in real time. A scroll fires the moment the green dot crosses one of the threshold marks — up to go forward, down to go back.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">·</div>
+        <h3>Sensitivity slider</h3>
+        <p>Higher means a smaller nod triggers a scroll; lower needs a more deliberate one. Default 5 works for most people. The threshold marks move in real time.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">·</div>
+        <h3>Enable / Disable Tracking</h3>
+        <p>Required on first use to request camera permission. Click Disable to instantly cut the camera feed — there's no background recording.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">·</div>
+        <h3>Minimize ( − ) / Expand ( + )</h3>
+        <p>Click the − to collapse the panel down to just its title bar while tracking keeps running. Click the + to bring the full panel back. Great when you want the overlay out of the way without losing hands-free scrolling.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">·</div>
+        <h3>Drag to move</h3>
+        <p>Grab the "NOD SCROLL" header to drag the overlay anywhere on the page. Helpful if it ever sits on top of a video control you want to click.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">·</div>
+        <h3>Free trial counter</h3>
+        <p>Shows how many free scrolls remain today, counted across every supported site combined. Resets at midnight. One $0.99 unlock removes the daily limit forever, on up to 3 devices.</p>
+      </div>
+    </div>
+
+    <div class="tip-banner">
+      <div class="tip-icon">💡</div>
+      <div>
+        <strong>Heads up</strong>
+        <p>After dragging or clicking inside the Nod Scroll panel, click once on the reel video before nodding. Some sites (YouTube Shorts in particular) only respond to scrolls when the page itself has focus — not when the overlay does.</p>
       </div>
     </div>
   </section>
@@ -310,7 +369,7 @@
 
     <details class="faq-item">
       <summary>Why isn't there a free version forever?</summary>
-      <p>The model running in your browser uses your computer's GPU and the project costs real time to maintain across four sites that change their layouts constantly. The 3-free-scrolls trial lets you make sure it works on your machine before you spend a dollar.</p>
+      <p>The model running in your browser uses your computer's GPU and the project costs real time to maintain across four sites that change their layouts constantly. The 3-free-scrolls-per-day trial lets you make sure it works on your machine before you spend a dollar.</p>
     </details>
 
     <details class="faq-item">

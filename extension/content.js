@@ -17,21 +17,45 @@
   // isolated-world content script does the actual fetch (allowed via the
   // extension's host_permissions).
   window.addEventListener('message', async (e) => {
-    if (e.source !== window || !e.data || e.data.type !== 'nodScrollValidate') return;
-    const { code, deviceId, nonce } = e.data;
-    try {
-      const r = await fetch('https://nod-scroll.netlify.app/.netlify/functions/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, deviceId }),
-      });
-      const data = await r.json().catch(() => ({ valid: false, error: 'Bad response' }));
-      window.postMessage({ type: 'nodScrollValidateResult', nonce, data }, '*');
-    } catch (err) {
-      window.postMessage({
-        type: 'nodScrollValidateResult', nonce,
-        data: { valid: false, error: 'Network error' },
-      }, '*');
+    if (e.source !== window || !e.data) return;
+    const { type, nonce } = e.data;
+
+    // Cross-site persistent storage (chrome.storage.local). Once a user enters
+    // a valid code, paid status persists across every site the extension runs
+    // on — not just the one where they activated.
+    if (type === 'nodScrollStorageGet') {
+      try {
+        const data = await chrome.storage.local.get(null);
+        window.postMessage({ type: 'nodScrollStorageGetResult', nonce, data }, '*');
+      } catch {
+        window.postMessage({ type: 'nodScrollStorageGetResult', nonce, data: {} }, '*');
+      }
+      return;
+    }
+    if (type === 'nodScrollStorageSet') {
+      try { await chrome.storage.local.set(e.data.data || {}); } catch {}
+      window.postMessage({ type: 'nodScrollStorageSetResult', nonce }, '*');
+      return;
+    }
+
+    // License validation — routes through here because page CSP blocks the
+    // main world from fetching arbitrary origins.
+    if (type === 'nodScrollValidate') {
+      const { code, deviceId } = e.data;
+      try {
+        const r = await fetch('https://nod-scroll.netlify.app/.netlify/functions/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, deviceId }),
+        });
+        const data = await r.json().catch(() => ({ valid: false, error: 'Bad response' }));
+        window.postMessage({ type: 'nodScrollValidateResult', nonce, data }, '*');
+      } catch (err) {
+        window.postMessage({
+          type: 'nodScrollValidateResult', nonce,
+          data: { valid: false, error: 'Network error' },
+        }, '*');
+      }
     }
   });
 })();

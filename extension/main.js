@@ -172,25 +172,67 @@ function processPitch(pitch) {
   }
 }
 
+// ── Cross-site persistent storage ────────────────────────────────────────────
+// Routed through content.js (isolated world) which has chrome.storage.local
+// access. State is shared across every site the extension runs on, so paying
+// once unlocks Facebook, YouTube, TikTok, and Instagram all at the same time.
+const state = {
+  paid: false,
+  code: '',
+  deviceId: null,
+  sensitivity: 5,
+  enabled: false,
+  freeUsedDate: '',  // YYYY-MM-DD
+  freeUsedToday: 0,
+};
+
+function storageLoad() {
+  return new Promise((resolve) => {
+    const nonce = String(Math.random()) + Date.now();
+    const handler = (e) => {
+      if (e.source !== window || !e.data
+          || e.data.type !== 'nodScrollStorageGetResult'
+          || e.data.nonce !== nonce) return;
+      window.removeEventListener('message', handler);
+      Object.assign(state, e.data.data || {});
+      resolve();
+    };
+    window.addEventListener('message', handler);
+    window.postMessage({ type: 'nodScrollStorageGet', nonce }, '*');
+    setTimeout(() => { window.removeEventListener('message', handler); resolve(); }, 3000);
+  });
+}
+
+function storageSet(patch) {
+  Object.assign(state, patch);
+  window.postMessage({
+    type: 'nodScrollStorageSet', data: patch, nonce: String(Math.random()),
+  }, '*');
+}
+
 // ── Paywall helpers ──────────────────────────────────────────────────────────
-function isPaid() {
-  return localStorage.getItem('nodScroll_paid') === 'true';
-}
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+function isPaid() { return !!state.paid; }
+
 function getFreeUsed() {
-  return parseInt(localStorage.getItem('nodScroll_freeUsed') || '0', 10);
+  if (state.freeUsedDate !== todayKey()) return 0;
+  return state.freeUsedToday || 0;
 }
+
 function incrementFree() {
-  const n = getFreeUsed() + 1;
-  localStorage.setItem('nodScroll_freeUsed', String(n));
-  return n;
+  const today = todayKey();
+  const count = (state.freeUsedDate === today ? state.freeUsedToday : 0) + 1;
+  storageSet({ freeUsedDate: today, freeUsedToday: count });
+  return count;
 }
 function getDeviceId() {
-  let id = localStorage.getItem('nodScroll_deviceId');
-  if (!id) {
-    id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2));
-    localStorage.setItem('nodScroll_deviceId', id);
+  if (!state.deviceId) {
+    const id = (crypto.randomUUID ? crypto.randomUUID()
+                : String(Date.now()) + Math.random().toString(36).slice(2));
+    storageSet({ deviceId: id });
   }
-  return id;
+  return state.deviceId;
 }
 
 // Sends the code to content.js (isolated world) which does the actual fetch
@@ -209,8 +251,7 @@ function tryUnlock(raw) {
       clearTimeout(timeout);
       const data = e.data.data || {};
       if (data.valid) {
-        localStorage.setItem('nodScroll_paid', 'true');
-        localStorage.setItem('nodScroll_code', code);
+        storageSet({ paid: true, code });
         resolve({ ok: true });
       } else {
         resolve({ ok: false, error: data.error || 'Invalid code.' });
@@ -325,12 +366,12 @@ async function enableTracking() {
     smoothedPitch = null; baseline = null; lastDelta = 0;
     if (btn) { btn.textContent = 'Disable Tracking'; btn.className = 'on'; }
     setStatus('Tracking active', 'info');
-    localStorage.setItem('nodScroll_enabled', 'true');
+    storageSet({ enabled: true });
     startLoop();
   } catch (err) {
     setStatus('Error: ' + err.message, 'error');
     console.error('[NodScroll]', err);
-    localStorage.setItem('nodScroll_enabled', 'false');
+    storageSet({ enabled: false });
   }
 }
 
@@ -346,7 +387,7 @@ function disableTracking() {
   if (camOff) camOff.style.display = '';
   if (btn) { btn.textContent = 'Enable Tracking'; btn.className = 'off'; }
   setStatus('Tracking disabled');
-  localStorage.setItem('nodScroll_enabled', 'false');
+  storageSet({ enabled: false });
   const pitchEl = document.getElementById('nod-pitch-val');
   if (pitchEl) pitchEl.textContent = '—';
   const badgeEl = document.getElementById('nod-state-badge');
@@ -540,7 +581,7 @@ function updatePaywallCounter() {
   if (!el) return;
   if (isPaid()) { el.className = 'hidden'; return; }
   const remaining = Math.max(0, FREE_SCROLLS_LIMIT - getFreeUsed());
-  el.textContent = `Free trial: ${remaining}/${FREE_SCROLLS_LIMIT} scrolls left`;
+  el.textContent = `Free trial: ${remaining}/${FREE_SCROLLS_LIMIT} scrolls left today`;
   el.className = '';
 }
 
@@ -582,8 +623,10 @@ function setupOverlay() {
   updatePaywallCounter();
   if (!isPaid() && getFreeUsed() >= FREE_SCROLLS_LIMIT) showPaywall();
 
-  const saved = localStorage.getItem('nodScroll_sensitivity');
-  if (saved !== null) { sensSlider.value = saved; sensVal.textContent = saved; }
+  if (state.sensitivity) {
+    sensSlider.value = state.sensitivity;
+    sensVal.textContent = state.sensitivity;
+  }
 
   collapseBtn.addEventListener('click', () => {
     const c = body.classList.toggle('nod-collapsed');
@@ -612,16 +655,17 @@ function setupOverlay() {
 
   sensSlider.addEventListener('input', () => {
     sensVal.textContent = sensSlider.value;
-    localStorage.setItem('nodScroll_sensitivity', sensSlider.value);
+    storageSet({ sensitivity: parseInt(sensSlider.value, 10) });
   });
 
-  if (localStorage.getItem('nodScroll_enabled') === 'true') {
+  if (state.enabled) {
     enableTracking();
   }
 }
 
-function init() {
+async function init() {
   if (document.getElementById('nod-overlay')) return;
+  await storageLoad();   // hydrate cross-site state before building UI
   buildOverlay();
   setupOverlay();
 }
