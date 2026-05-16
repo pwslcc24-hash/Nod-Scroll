@@ -24,9 +24,30 @@
       if (area !== 'local') return;
       const patch = {};
       for (const k of Object.keys(changes)) patch[k] = changes[k].newValue;
+      console.log('[NodScroll] storage changed, broadcasting:', patch);
       window.postMessage({ type: 'nodScrollStorageChanged', patch }, '*');
     });
+  } else {
+    console.warn('[NodScroll] chrome.storage.onChanged unavailable — sync disabled');
   }
+
+  // Safety net: whenever the tab becomes visible (user switches to it),
+  // re-read chrome.storage and broadcast the full state to the main world.
+  // Catches activations that happened on other sites while this tab existed.
+  async function syncFromStorage() {
+    if (!chrome.storage?.local) return;
+    try {
+      const data = await chrome.storage.local.get(null);
+      if (data && Object.keys(data).length) {
+        window.postMessage({ type: 'nodScrollStorageChanged', patch: data }, '*');
+      }
+    } catch (e) { console.warn('[NodScroll] sync read failed:', e); }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') syncFromStorage();
+  });
+  // Initial pull too, in case main.js's own load races with content.js setup
+  setTimeout(syncFromStorage, 500);
 
   window.addEventListener('message', async (e) => {
     if (e.source !== window || !e.data) return;
