@@ -48,16 +48,15 @@
       display: flex; align-items: center; gap: 8px;
     }
     .logo-mark {
-      width: 22px; height: 22px; border-radius: 6px;
-      background: var(--bg-2); display: inline-flex;
-      align-items: center; justify-content: center;
-      border: 1px solid var(--border);
+      width: 24px; height: 24px;
+      display: inline-block; vertical-align: middle;
+      background: url('/logo-512.png') center/contain no-repeat;
     }
-    .logo-mark::before {
-      content: ''; width: 8px; height: 8px;
-      border-right: 2px solid var(--accent);
-      border-bottom: 2px solid var(--accent);
-      transform: rotate(45deg); margin-top: -3px;
+    .step-icon {
+      width: 28px; height: 28px;
+      margin-bottom: 12px;
+      display: block;
+      background: url('/logo-512.png') center/contain no-repeat;
     }
     nav a.nav-link { color: var(--muted); font-size: 14px; margin-left: 20px; }
     nav a.nav-link:hover { color: var(--text); }
@@ -301,32 +300,32 @@
     <p class="lead">The overlay panel gives you full control. Here's what each piece does.</p>
     <div class="steps">
       <div class="step">
-        <div class="step-num">·</div>
+        <div class="step-icon"></div>
         <h3>Pitch bar</h3>
         <p>Shows the angle of your head in real time. A scroll fires the moment the green dot crosses one of the threshold marks — up to go forward, down to go back.</p>
       </div>
       <div class="step">
-        <div class="step-num">·</div>
+        <div class="step-icon"></div>
         <h3>Sensitivity slider</h3>
         <p>Higher means a smaller nod triggers a scroll; lower needs a more deliberate one. Default 5 works for most people. The threshold marks move in real time.</p>
       </div>
       <div class="step">
-        <div class="step-num">·</div>
+        <div class="step-icon"></div>
         <h3>Enable / Disable Tracking</h3>
         <p>Required on first use to request camera permission. Click Disable to instantly cut the camera feed — there's no background recording.</p>
       </div>
       <div class="step">
-        <div class="step-num">·</div>
+        <div class="step-icon"></div>
         <h3>Minimize ( − ) / Expand ( + )</h3>
         <p>Click the − to collapse the panel down to just its title bar while tracking keeps running. Click the + to bring the full panel back. Great when you want the overlay out of the way without losing hands-free scrolling.</p>
       </div>
       <div class="step">
-        <div class="step-num">·</div>
+        <div class="step-icon"></div>
         <h3>Drag to move</h3>
         <p>Grab the "NOD SCROLL" header to drag the overlay anywhere on the page. Helpful if it ever sits on top of a video control you want to click.</p>
       </div>
       <div class="step">
-        <div class="step-num">·</div>
+        <div class="step-icon"></div>
         <h3>Free trial counter</h3>
         <p>Shows how many free scrolls remain today, counted across every supported site combined. Resets at midnight. One $0.99 unlock removes the daily limit forever, on up to 3 devices.</p>
       </div>
@@ -391,7 +390,7 @@
   <!-- FINAL CTA -->
   <div class="final-cta">
     <h2>Try it free.</h2>
-    <p>Three free scrolls on every site, no signup, no card required.</p>
+    <p>Three free scrolls every day across all sites, no signup, no card required.</p>
     <a class="btn btn-primary" href="/install.html">Install Nod Scroll</a>
   </div>
 
