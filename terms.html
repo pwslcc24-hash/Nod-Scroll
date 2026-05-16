@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms of Service — Nod Scroll</title>
+  <meta name="description" content="Terms of Service for Nod Scroll browser extension.">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <style>
+    :root {
+      --bg: #0a0d18; --bg-2: #121726;
+      --card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #e8ecf3; --muted: #8a93a6;
+      --accent: #60c86e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: #7ad889; }
+    .container { max-width: 740px; margin: 0 auto; padding: 0 24px; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10, 13, 24, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+    }
+    .logo {
+      font-weight: 800; font-size: 16px;
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text);
+    }
+    .logo-mark {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--bg-2);
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+    }
+    .logo-mark::before {
+      content: ''; width: 8px; height: 8px;
+      border-right: 2px solid var(--accent);
+      border-bottom: 2px solid var(--accent);
+      transform: rotate(45deg); margin-top: -3px;
+    }
+    nav a.nav-link { color: var(--muted); font-size: 14px; margin-left: 20px; }
+    nav a.nav-link:hover { color: var(--text); }
+
+    header.page-head {
+      padding: 60px 0 30px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    header.page-head h1 {
+      font-size: clamp(32px, 5vw, 44px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    header.page-head p { color: var(--muted); font-size: 14px; }
+
+    main { padding: 50px 0 60px; }
+    main h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 36px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    main h2:first-child { margin-top: 0; }
+    main p, main li {
+      color: #c4cad6;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    main ul { padding-left: 22px; }
+    main li { margin-bottom: 6px; }
+    main strong { color: var(--text); }
+
+    footer {
+      padding: 32px 0 60px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--muted); margin: 0 12px; }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">
+        <span class="logo-mark"></span>
+        Nod Scroll
+      </a>
+      <div>
+        <a class="nav-link" href="/#how-it-works">How it works</a>
+        <a class="nav-link" href="/#faq">FAQ</a>
+        <a class="nav-link" href="/#privacy">Privacy</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="page-head">
+    <div class="container">
+      <h1>Terms of Service</h1>
+      <p>Last updated: May 15, 2026</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <h2>1. Agreement</h2>
+      <p>
+        By installing or using the Nod Scroll browser extension ("Nod Scroll", "the Extension"), you agree to these Terms of Service. If you do not agree, please do not install or use the Extension.
+      </p>
+
+      <h2>2. What you get</h2>
+      <p>
+        Nod Scroll is a browser extension that uses your webcam, processed entirely on your device, to detect head nods and navigate short-video feeds (Facebook Reels, YouTube Shorts, TikTok, and Instagram Reels). You may use the free trial — three (3) scrolls per supported site — at no cost. Paying the one-time fee removes the trial limit.
+      </p>
+
+      <h2>3. License</h2>
+      <p>
+        Subject to these terms, you are granted a non-exclusive, non-transferable, revocable personal license to use Nod Scroll on devices you own or control, up to the activation limit associated with your unlock code (currently <strong>three (3) devices per code</strong>).
+      </p>
+      <p>
+        You may not: redistribute the extension or your unlock code; resell, sublicense, or share access; reverse-engineer the extension for the purpose of bypassing the activation limit; or use the extension in any way that violates applicable law or the terms of service of any third-party site.
+      </p>
+
+      <h2>4. Pricing &amp; refunds</h2>
+      <p>
+        The unlock fee is a one-time payment of <strong>$0.99 USD</strong> per code, processed by Stripe. Each code may be activated on up to three (3) devices.
+      </p>
+      <p>
+        If Nod Scroll does not work on your device or you are otherwise dissatisfied, email <a href="mailto:porterwhitworth@gmail.com">porterwhitworth@gmail.com</a> within <strong>14 days</strong> of purchase and we will issue a full refund. Refund requests after 14 days are reviewed on a case-by-case basis.
+      </p>
+
+      <h2>5. Third-party sites</h2>
+      <p>
+        Nod Scroll interacts with Facebook, Instagram, TikTok, and YouTube. These services are independent of Nod Scroll and may change their layouts, APIs, or terms at any time. We cannot guarantee that Nod Scroll will continue to work on any specific site or feature, and we are not affiliated with, endorsed by, or sponsored by any of these companies.
+      </p>
+
+      <h2>6. Privacy</h2>
+      <p>
+        Your webcam feed is processed entirely on your device and is never recorded, stored, or transmitted by us. The only data Nod Scroll persists is your unlock code, anonymous activation device IDs, and free-trial counter. See the <a href="/#privacy">Privacy section on our homepage</a> for full details.
+      </p>
+
+      <h2>7. Disclaimer of warranties</h2>
+      <p>
+        Nod Scroll is provided "as is" without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or noninfringement. We do not warrant that the extension will be uninterrupted, error-free, or compatible with any specific browser version or third-party site.
+      </p>
+
+      <h2>8. Limitation of liability</h2>
+      <p>
+        To the maximum extent permitted by law, in no event shall Nod Scroll or its operator be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the extension. In any case, total liability is limited to the amount you paid for your unlock code.
+      </p>
+
+      <h2>9. Termination</h2>
+      <p>
+        We may revoke an unlock code that is found to be shared in violation of these terms (for example, posted publicly so unrelated parties activate it). You may stop using the extension at any time by uninstalling it from your browser.
+      </p>
+
+      <h2>10. Changes to these terms</h2>
+      <p>
+        We may update these terms occasionally. Material changes will be reflected by updating the "Last updated" date at the top of this page. Continued use of the extension after changes constitutes acceptance.
+      </p>
+
+      <h2>11. Contact</h2>
+      <p>
+        Questions, support requests, refunds, or anything else: <a href="mailto:porterwhitworth@gmail.com">porterwhitworth@gmail.com</a>.
+      </p>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div style="margin-bottom: 12px;">
+        <a href="mailto:porterwhitworth@gmail.com">Contact</a>
+        <a href="/#privacy">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+      © 2026 Nod Scroll. Built with respect for your camera.
+    </div>
+  </footer>
+
+</body>
+</html>
