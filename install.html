@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Install Nod Scroll</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <style>
+    :root {
+      --bg: #0a0d18;
+      --bg-2: #121726;
+      --card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #e8ecf3;
+      --muted: #8a93a6;
+      --accent: #60c86e;
+      --accent-2: #7ad889;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+    .container { max-width: 680px; margin: 0 auto; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-2); }
+    .back {
+      display: inline-block; color: var(--muted);
+      font-size: 14px; margin-bottom: 32px;
+    }
+    h1 {
+      font-size: 36px; font-weight: 800;
+      letter-spacing: -0.02em; margin-bottom: 12px;
+    }
+    .sub { color: var(--muted); font-size: 16px; margin-bottom: 36px; }
+    .download-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .btn {
+      display: inline-block;
+      background: var(--accent); color: #0a0d18;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 700; font-size: 16px;
+    }
+    .btn:hover { background: var(--accent-2); color: #0a0d18; }
+    .btn-meta {
+      font-size: 12px; color: var(--muted); margin-top: 10px;
+    }
+    h2 {
+      font-size: 22px; font-weight: 700;
+      margin: 40px 0 16px;
+    }
+    ol { padding-left: 24px; }
+    ol li {
+      margin-bottom: 14px; color: var(--text);
+    }
+    ol li code {
+      background: rgba(255,255,255,0.08);
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 13px; font-family: ui-monospace, monospace;
+    }
+    .note {
+      background: linear-gradient(135deg, rgba(96,200,110,0.08), rgba(96,200,110,0.02));
+      border: 1px solid rgba(96,200,110,0.2);
+      border-radius: 10px; padding: 16px 18px;
+      margin: 24px 0; font-size: 14px;
+    }
+    .note strong { color: var(--accent); }
+    .coming-soon {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-top: 32px;
+      font-size: 14px; color: var(--muted);
+    }
+    .coming-soon strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="/">← Back to Nod Scroll</a>
+
+    <h1>Install Nod Scroll</h1>
+    <p class="sub">Two-minute setup. Works in Chrome, Edge, Brave, and Atlas. Free trial: 3 scrolls per site, then $0.99 to unlock unlimited.</p>
+
+    <div class="download-card">
+      <a class="btn" href="/nodscroll-extension.zip" download>↓ Download Extension (.zip)</a>
+      <div class="btn-meta">~9 MB · Includes face-tracking model · 100% on-device</div>
+    </div>
+
+    <h2>How to install</h2>
+    <ol>
+      <li><strong>Unzip the file</strong> you just downloaded. You'll get a folder called <code>extension</code>.</li>
+      <li>Open your browser and go to <code>chrome://extensions</code> (in the URL bar).</li>
+      <li>Toggle <strong>Developer mode</strong> on (top-right corner of the page).</li>
+      <li>Click <strong>Load unpacked</strong> (top-left button).</li>
+      <li>Pick the <code>extension</code> folder you unzipped.</li>
+      <li>Visit any reel page — Facebook Reels, YouTube Shorts, TikTok, or Instagram Reels — and look for the <strong>Nod Scroll</strong> panel in the bottom-right.</li>
+      <li>Click <strong>Enable Tracking</strong> and grant camera permission. Nod up to scroll, down to go back.</li>
+    </ol>
+
+    <div class="note">
+      <strong>Privacy:</strong> your webcam feed never leaves your device. All face tracking runs locally in your browser. No uploads, no telemetry, no servers.
+    </div>
+
+    <h2>Free trial → unlock</h2>
+    <p style="color: var(--muted); font-size: 15px;">You get 3 free nod-scrolls per site. After that, click <strong style="color: var(--text)">Buy ($0.99)</strong> in the extension's overlay, complete checkout, and paste your unlock code back into the box. One unlock works on every site, forever.</p>
+
+    <div class="coming-soon">
+      <strong>Coming soon to the Chrome Web Store</strong> — one-click install, auto-updates. For now, the unpacked install above is the way.
+    </div>
+  </div>
+</body>
+</html>

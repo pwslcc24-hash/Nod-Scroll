@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thanks! Your unlock code — Nod Scroll</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <style>
+    :root {
+      --bg: #0a0d18; --bg-2: #121726;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8ecf3; --muted: #8a93a6;
+      --accent: #60c86e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px;
+    }
+    .container { max-width: 560px; text-align: center; }
+    .check {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(96,200,110,0.15);
+      color: var(--accent);
+      margin: 0 auto 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+    }
+    h1 {
+      font-size: 32px; font-weight: 800;
+      letter-spacing: -0.02em; margin-bottom: 8px;
+    }
+    .sub { color: var(--muted); margin-bottom: 32px; }
+    .code-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .code-label {
+      font-size: 12px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .code {
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-size: 24px; font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      padding: 16px;
+      background: rgba(96,200,110,0.06);
+      border: 1px solid rgba(96,200,110,0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: all;
+    }
+    .code.loading { color: var(--muted); font-size: 14px; font-weight: 500; }
+    .copy-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text); padding: 8px 16px;
+      border-radius: 6px; cursor: pointer; margin-top: 12px;
+      font-size: 13px;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.05); }
+    .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+    .instructions {
+      text-align: left; color: var(--muted);
+      font-size: 14px; line-height: 1.7;
+    }
+    .instructions ol { padding-left: 20px; }
+    .instructions li { margin-bottom: 6px; }
+    .instructions strong { color: var(--text); }
+    .warn {
+      background: rgba(239,83,80,0.08);
+      border: 1px solid rgba(239,83,80,0.2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #ef9a9a;
+      text-align: left;
+    }
+    a.home { display: inline-block; margin-top: 24px; color: var(--muted); font-size: 13px; }
+    a.home:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="check">✓</div>
+    <h1>Payment successful</h1>
+    <p class="sub">Your unique unlock code is ready below.</p>
+
+    <div class="code-card">
+      <div class="code-label">Your unlock code</div>
+      <div id="code" class="code loading">Loading your code…</div>
+      <button id="copy-btn" class="copy-btn" disabled>Copy</button>
+    </div>
+
+    <div class="instructions">
+      <strong>How to activate:</strong>
+      <ol>
+        <li>Open the Nod Scroll extension on any reel page.</li>
+        <li>After using your 3 free scrolls, the paywall appears.</li>
+        <li>Paste this code into the unlock box and hit Activate.</li>
+        <li>Unlimited scrolls — works on up to 3 devices per code.</li>
+      </ol>
+    </div>
+
+    <div class="warn">
+      <strong>Keep this code private.</strong> Each code can only be used on 3 devices. Sharing publicly will burn your activations.
+    </div>
+
+    <a class="home" href="/">← Back to Nod Scroll</a>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sessionId = params.get('session_id');
+    const codeEl = document.getElementById('code');
+    const btn    = document.getElementById('copy-btn');
+
+    if (!sessionId) {
+      codeEl.textContent = 'Missing session ID — please contact support.';
+      codeEl.classList.remove('loading');
+    } else {
+      fetch('/.netlify/functions/get-code?session_id=' + encodeURIComponent(sessionId))
+        .then(r => r.json())
+        .then(data => {
+          if (data.code) {
+            codeEl.textContent = data.code;
+            codeEl.classList.remove('loading');
+            btn.disabled = false;
+          } else {
+            codeEl.textContent = data.error || 'Could not retrieve code.';
+            codeEl.classList.remove('loading');
+          }
+        })
+        .catch(() => {
+          codeEl.textContent = 'Network error — please refresh.';
+          codeEl.classList.remove('loading');
+        });
+    }
+
+    btn.addEventListener('click', () => {
+      const code = codeEl.textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>

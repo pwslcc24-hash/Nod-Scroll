@@ -34,12 +34,13 @@ const COOLDOWN_MS    = 800;
 
 // ── Paywall config ───────────────────────────────────────────────────────────
 // After FREE_SCROLLS_LIMIT free nods on a given site, the user is prompted to
-// buy a license. The same UNLOCK_CODE works across all sites. Replace the
-// Stripe link with your own Payment Link from https://dashboard.stripe.com/
-// payment-links and set the success page to display the UNLOCK_CODE below.
+// buy a license. Unique codes are generated per-purchase by the webhook on
+// https://nod-scroll.netlify.app, then validated via /.netlify/functions/validate.
+// Each code can be activated on up to 3 devices before further activations
+// are refused, blocking casual code-sharing.
 const FREE_SCROLLS_LIMIT = 3;
 const STRIPE_PAYMENT_URL = 'https://buy.stripe.com/4gM5kCczf04R2lRdwX1wY00';
-const UNLOCK_CODE        = 'NOD-2026-UNLOCK';                     // ← change this; users paste it to activate
+const VALIDATE_URL       = 'https://nod-scroll.netlify.app/.netlify/functions/validate';
 const SMOOTH_ALPHA       = 0.65;
 const BASELINE_ALPHA     = 0.985;
 const FPS_TARGET         = 30;
@@ -183,13 +184,47 @@ function incrementFree() {
   localStorage.setItem('nodScroll_freeUsed', String(n));
   return n;
 }
+function getDeviceId() {
+  let id = localStorage.getItem('nodScroll_deviceId');
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2));
+    localStorage.setItem('nodScroll_deviceId', id);
+  }
+  return id;
+}
+
+// Sends the code to content.js (isolated world) which does the actual fetch
+// to the Netlify validate function. Page CSP on FB/IG/etc blocks main-world
+// fetches to non-whitelisted origins, so we route through the content script.
 function tryUnlock(raw) {
   const code = (raw || '').trim().toUpperCase();
-  if (code === UNLOCK_CODE) {
-    localStorage.setItem('nodScroll_paid', 'true');
-    return true;
-  }
-  return false;
+  if (!code) return Promise.resolve({ ok: false, error: 'Enter your code.' });
+  return new Promise((resolve) => {
+    const nonce = String(Math.random()) + Date.now();
+    const handler = (e) => {
+      if (e.source !== window || !e.data
+          || e.data.type !== 'nodScrollValidateResult'
+          || e.data.nonce !== nonce) return;
+      window.removeEventListener('message', handler);
+      clearTimeout(timeout);
+      const data = e.data.data || {};
+      if (data.valid) {
+        localStorage.setItem('nodScroll_paid', 'true');
+        localStorage.setItem('nodScroll_code', code);
+        resolve({ ok: true });
+      } else {
+        resolve({ ok: false, error: data.error || 'Invalid code.' });
+      }
+    };
+    const timeout = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      resolve({ ok: false, error: 'Timeout — try again.' });
+    }, 10000);
+    window.addEventListener('message', handler);
+    window.postMessage({
+      type: 'nodScrollValidate', code, deviceId: getDeviceId(), nonce,
+    }, '*');
+  });
 }
 
 function fireNod(direction) {
@@ -525,13 +560,19 @@ function setupOverlay() {
   buyBtn.addEventListener('click', () => {
     window.open(STRIPE_PAYMENT_URL, '_blank', 'noopener');
   });
-  activateBtn.addEventListener('click', () => {
-    if (tryUnlock(codeInput.value)) {
+  activateBtn.addEventListener('click', async () => {
+    activateBtn.disabled = true;
+    paywallErr.textContent = 'Checking…';
+    paywallErr.style.color = '';
+    const result = await tryUnlock(codeInput.value);
+    activateBtn.disabled = false;
+    if (result.ok) {
       paywallErr.textContent = '';
       updatePaywallCounter();
       hidePaywall();
     } else {
-      paywallErr.textContent = 'Invalid code.';
+      paywallErr.textContent = result.error;
+      paywallErr.style.color = '#ef5350';
     }
   });
   codeInput.addEventListener('keydown', (e) => {

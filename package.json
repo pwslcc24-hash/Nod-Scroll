@@ -1,0 +1,10 @@
+{
+  "name": "nod-scroll",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^7.4.0",
+    "stripe": "^16.0.0"
+  }
+}
