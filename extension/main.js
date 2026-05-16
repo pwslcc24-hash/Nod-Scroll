@@ -28,9 +28,11 @@ const WASM_PATH = new URL('./vendor/wasm/', import.meta.url).href;
 const MODEL_URL = new URL('./vendor/face_landmarker.task', import.meta.url).href;
 
 // ── Tunable constants ────────────────────────────────────────────────────────
-const THRESHOLD_DOWN = 0.30;   // chin-drop side
-const THRESHOLD_UP   = 0.22;   // chin-rise side (smaller = more sensitive)
-const COOLDOWN_MS    = 800;
+const THRESHOLD_DOWN     = 0.30;   // chin-drop side
+const THRESHOLD_UP       = 0.22;   // chin-rise side (smaller = more sensitive)
+const COOLDOWN_MS        = 800;
+const TONGUE_THRESHOLD   = 0.40;   // MediaPipe blendshape "tongueOut" 0–1
+const TONGUE_COOLDOWN_MS = 1500;   // ignore further likes within this window
 
 // ── Paywall config ───────────────────────────────────────────────────────────
 // After FREE_SCROLLS_LIMIT free nods on a given site, the user is prompted to
@@ -70,19 +72,23 @@ const SITE_CONFIG = {
     mode: 'click',
     next: '[aria-label="Next Card"]',
     prev: '[aria-label="Previous Card"]',
+    like: '[aria-label="Like"]',
   },
   'www.youtube.com': {
     mode: 'key',  // YT Shorts responds to native ArrowDown/ArrowUp
+    like: 'ytd-reel-video-renderer[is-active] button[aria-label*="like" i]:not([aria-label*="Dislike" i]), button[aria-label*="like this" i]:not([aria-label*="Dislike" i])',
   },
   'www.tiktok.com': {
     mode: 'both',
     next: '[data-e2e="arrow-right"], button[aria-label*="next" i]',
     prev: '[data-e2e="arrow-left"],  button[aria-label*="previous" i]',
+    like: '[data-e2e="like-icon"], button[aria-label*="Like" i]',
   },
   'www.instagram.com': {
     mode: 'both',
     next: 'svg[aria-label="Next"]',
     prev: 'svg[aria-label="Back"], svg[aria-label="Previous"]',
+    like: 'svg[aria-label="Like"]',
   },
 };
 
@@ -268,6 +274,46 @@ function tryUnlock(raw) {
   });
 }
 
+// ── Tongue → Like detector ───────────────────────────────────────────────────
+let lastTongueTime = 0;
+let tongueArmed    = true;   // becomes true again when tongue returns inside
+
+function processTongue(blendshapes, now) {
+  if (!blendshapes || !blendshapes.length) return;
+  const cats = blendshapes[0].categories;
+  if (!cats) return;
+  const t = cats.find(c => c.categoryName === 'tongueOut');
+  if (!t) return;
+
+  if (tongueArmed && t.score > TONGUE_THRESHOLD
+      && (now - lastTongueTime) > TONGUE_COOLDOWN_MS) {
+    tongueArmed = false;
+    lastTongueTime = now;
+    fireLike();
+  } else if (!tongueArmed && t.score < TONGUE_THRESHOLD * 0.4) {
+    tongueArmed = true;   // re-arm only after tongue clearly returns
+  }
+}
+
+function fireLike() {
+  const cfg = SITE_CONFIG[location.hostname];
+  if (!cfg || !cfg.like) { console.warn('[NodScroll] no like selector for', location.hostname); return; }
+  const btn = document.querySelector(cfg.like);
+  if (btn) {
+    const target = (btn.tagName === 'svg' || btn.tagName === 'SVG')
+      ? (btn.closest('button, [role="button"]') || btn)
+      : btn;
+    target.click();
+    console.log('[NodScroll] liked (tongue) →', cfg.like);
+    setStatus('❤ Liked!', 'info');
+    setTimeout(() => setStatus(''), 1500);
+  } else {
+    console.warn('[NodScroll] like button not found on', location.hostname, '— update SITE_CONFIG.like');
+    setStatus('Like button not found', 'error');
+    setTimeout(() => setStatus(''), 1500);
+  }
+}
+
 function fireNod(direction) {
   if (!isPaid()) {
     if (getFreeUsed() >= FREE_SCROLLS_LIMIT) {
@@ -328,6 +374,7 @@ function startLoop() {
     const result = faceLandmarker.detectForVideo(videoEl, ts);
     const p = computePitch(result);
     if (p !== null) processPitch(p);
+    processTongue(result.faceBlendshapes, Date.now());
     updateUI();
   }
   rafId = requestAnimationFrame(loop);
@@ -342,7 +389,7 @@ async function initFaceLandmarker() {
     runningMode: 'VIDEO',
     numFaces: 1,
     outputFacialTransformationMatrixes: true,
-    outputFaceBlendshapes: false,
+    outputFaceBlendshapes: true,   // enables tongueOut detection
   });
 }
 
