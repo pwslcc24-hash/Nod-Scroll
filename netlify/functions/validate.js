@@ -8,6 +8,12 @@
 
 import { getStore } from '@netlify/blobs';
 
+// Master owner code — keep this secret. Any user who enters this string gets
+// unlimited unlock with no activation limit. Useful for giving press, friends,
+// or yourself a free pass without making a real Stripe purchase. Change this
+// value if it ever leaks publicly.
+const OWNER_CODE = 'NOD-VIP-2026-X7K3';
+
 const cors = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -31,6 +37,12 @@ export default async (req) => {
 
   if (!code || !deviceId) {
     return json({ valid: false, error: 'Missing code or deviceId' }, 400);
+  }
+
+  // Master owner code — bypasses Blobs lookup and activation tracking entirely.
+  // Always valid, no per-device limit, no record kept in storage.
+  if (code === OWNER_CODE) {
+    return json({ valid: true });
   }
 
   const licenses = getStore('licenses');
