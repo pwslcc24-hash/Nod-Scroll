@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nod Scroll — Hands-Free Short Video",
-  "version": "1.5.5",
+  "version": "1.6.5",
   "description": "Navigate Facebook Reels, YouTube Shorts, TikTok, and Instagram Reels with head nods. Camera processing stays on-device.",
   "icons": {
     "16":  "icon-16.png",

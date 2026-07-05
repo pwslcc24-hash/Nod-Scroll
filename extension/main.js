@@ -31,8 +31,12 @@ const MODEL_URL = new URL('./vendor/face_landmarker.task', import.meta.url).href
 const THRESHOLD_DOWN     = 0.30;   // chin-drop side
 const THRESHOLD_UP       = 0.22;   // chin-rise side (smaller = more sensitive)
 const COOLDOWN_MS        = 800;
-const TONGUE_THRESHOLD   = 0.40;   // MediaPipe blendshape "tongueOut" 0–1
-const TONGUE_COOLDOWN_MS = 1500;   // ignore further likes within this window
+// MediaPipe's public face_landmarker model doesn't ship the tongueOut
+// blendshape, so we use jawOpen as the proxy — sticking out your tongue
+// always opens the jaw. Threshold high enough that casual talking doesn't
+// trigger it (jawOpen during normal speech rarely exceeds 0.30).
+const TONGUE_THRESHOLD   = 0.50;
+const TONGUE_COOLDOWN_MS = 1500;
 
 // ── Paywall config ───────────────────────────────────────────────────────────
 // After FREE_SCROLLS_LIMIT free nods on a given site, the user is prompted to
@@ -67,16 +71,27 @@ let lastDelta      = 0;
 //     .filter(el => { const r = el.getBoundingClientRect();
 //       return r.right > innerWidth*0.7 && r.width < 120 && r.height < 120 && r.top > 80; })
 //     .map(el => el.getAttribute('aria-label'))
+// Per-site selectors. For `like`, we match BOTH the unliked and liked aria
+// labels so a second gesture can toggle the like off (Facebook flips "Like"
+// → "Remove Like", Instagram flips "Like" → "Unlike", YouTube similarly).
 const SITE_CONFIG = {
   'www.facebook.com': {
     mode: 'click',
     next: '[aria-label="Next Card"]',
     prev: '[aria-label="Previous Card"]',
-    like: '[aria-label="Like"]',
+    like: '[aria-label="Like"], [aria-label="Remove Like"], [aria-label="Unlike"]',
   },
   'www.youtube.com': {
-    mode: 'key',  // YT Shorts responds to native ArrowDown/ArrowUp
-    like: 'ytd-reel-video-renderer[is-active] button[aria-label*="like" i]:not([aria-label*="Dislike" i]), button[aria-label*="like this" i]:not([aria-label*="Dislike" i])',
+    mode: 'key',
+    // Explicit Dislike exclusions everywhere — "like this" is a substring of
+    // "Dislike this" so plain *="like this" would also match the dislike btn.
+    like: [
+      'button[aria-label="Unlike"]',
+      'button[aria-label^="like this" i]:not([aria-label*="dislike" i])',
+      '#like-button button:not([aria-label*="dislike" i])',
+      'ytd-like-button-renderer button:not([aria-label*="dislike" i])',
+      'like-button-view-model button:not([aria-label*="dislike" i])',
+    ].join(', '),
   },
   'www.tiktok.com': {
     mode: 'both',
@@ -88,7 +103,7 @@ const SITE_CONFIG = {
     mode: 'both',
     next: 'svg[aria-label="Next"]',
     prev: 'svg[aria-label="Back"], svg[aria-label="Previous"]',
-    like: 'svg[aria-label="Like"]',
+    like: 'svg[aria-label="Like"], svg[aria-label="Unlike"]',
   },
 };
 
@@ -351,12 +366,45 @@ function tryUnlock(raw) {
 let lastTongueTime = 0;
 let tongueArmed    = true;   // becomes true again when tongue returns inside
 
+let _tongueDebugLastLog = 0;
+let _tonguePeak = 0;
 function processTongue(blendshapes, now) {
-  if (!blendshapes || !blendshapes.length) return;
+  // Always-on diagnostic — fires every 3s no matter which branch we hit.
+  const shouldLog = (now - _tongueDebugLastLog > 3000);
+
+  if (!blendshapes || !blendshapes.length) {
+    if (shouldLog) {
+      _tongueDebugLastLog = now;
+      console.log('[NodScroll] tongue diag: no blendshapes in detection result');
+    }
+    return;
+  }
   const cats = blendshapes[0].categories;
-  if (!cats) return;
-  const t = cats.find(c => c.categoryName === 'tongueOut');
-  if (!t) return;
+  if (!cats || !cats.length) {
+    if (shouldLog) {
+      _tongueDebugLastLog = now;
+      console.log('[NodScroll] tongue diag: blendshapes present but no categories');
+    }
+    return;
+  }
+  // Public MediaPipe model lacks tongueOut, so we use jawOpen as the
+  // proxy (sticking your tongue out always opens your jaw).
+  const t = cats.find(c => c.categoryName === 'jawOpen');
+  if (!t) {
+    if (shouldLog) {
+      _tongueDebugLastLog = now;
+      console.log('[NodScroll] tongue diag: no jawOpen category. Got',
+        cats.length, 'cats:', cats.map(c => c.categoryName).join(','));
+    }
+    return;
+  }
+
+  if (t.score > _tonguePeak) _tonguePeak = t.score;
+  if (shouldLog) {
+    _tongueDebugLastLog = now;
+    console.log(`[NodScroll] tongue diag: current=${t.score.toFixed(3)}  peak=${_tonguePeak.toFixed(3)}  threshold=${TONGUE_THRESHOLD}  armed=${tongueArmed}`);
+    _tonguePeak = 0;
+  }
 
   if (tongueArmed && t.score > TONGUE_THRESHOLD
       && (now - lastTongueTime) > TONGUE_COOLDOWN_MS) {
@@ -364,27 +412,88 @@ function processTongue(blendshapes, now) {
     lastTongueTime = now;
     fireLike();
   } else if (!tongueArmed && t.score < TONGUE_THRESHOLD * 0.4) {
-    tongueArmed = true;   // re-arm only after tongue clearly returns
+    tongueArmed = true;
   }
+}
+
+// Find the currently-visible reel video. TikTok/IG/etc keep multiple reels
+// rendered in the DOM at once; a plain document.querySelector picks an
+// offscreen one. We pick the video that's vertically inside the viewport.
+function findVisibleVideo() {
+  const vids = [...document.querySelectorAll('video')];
+  for (const v of vids) {
+    const r = v.getBoundingClientRect();
+    if (r.width > 100 && r.height > 100
+        && r.bottom > 0 && r.top < innerHeight
+        && r.top > -r.height / 2 && r.bottom < innerHeight + r.height / 2) {
+      return v;
+    }
+  }
+  return vids[0] || null;
+}
+
+// Pick a like-button candidate that sits near the visible video. On every
+// supported platform the like button is at the TOP of the vertical action
+// rail (above dislike/comment/share), so prefer the top-most matching button.
+function findLikeNearVideo(cfg) {
+  const v = findVisibleVideo();
+  if (!v) return null;
+  const vr = v.getBoundingClientRect();
+  const all = [...document.querySelectorAll(cfg.like)];
+  let best = null, bestTop = Infinity;
+  for (const el of all) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (r.bottom < vr.top || r.top > vr.bottom) continue;
+    if (r.left < vr.right - 100) continue;             // must be near right edge
+    if (r.top < bestTop) { best = el; bestTop = r.top; }
+  }
+  return best;
 }
 
 function fireLike() {
   const cfg = SITE_CONFIG[location.hostname];
   if (!cfg || !cfg.like) { console.warn('[NodScroll] no like selector for', location.hostname); return; }
-  const btn = document.querySelector(cfg.like);
-  if (btn) {
-    const target = (btn.tagName === 'svg' || btn.tagName === 'SVG')
-      ? (btn.closest('button, [role="button"]') || btn)
-      : btn;
-    target.click();
-    console.log('[NodScroll] liked (tongue) →', cfg.like);
-    setStatus('❤ Liked!', 'info');
-    setTimeout(() => setStatus(''), 1500);
-  } else {
+  const found = findLikeNearVideo(cfg) || document.querySelector(cfg.like);
+  if (!found) {
     console.warn('[NodScroll] like button not found on', location.hostname, '— update SITE_CONFIG.like');
+    // First time we miss, dump nearby buttons so we can adjust the selector.
+    if (!window._nodLikeMissDumped) {
+      window._nodLikeMissDumped = true;
+      const v = findVisibleVideo();
+      const vr = v ? v.getBoundingClientRect() : null;
+      const candidates = [...document.querySelectorAll('button[aria-label], [role="button"][aria-label]')]
+        .filter(el => {
+          if (!vr) return false;
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0
+              && r.left > vr.right - 200 && r.left < vr.right + 300
+              && r.bottom > vr.top - 50 && r.top < vr.bottom + 50;
+        })
+        .map(el => ({
+          tag: el.tagName,
+          aria: el.getAttribute('aria-label'),
+          parent: el.parentElement?.tagName + (el.parentElement?.id ? '#' + el.parentElement.id : ''),
+        }));
+      console.log('[NodScroll] LIKE BUTTON DIAGNOSTIC — buttons near the active video:', candidates);
+    }
     setStatus('Like button not found', 'error');
     setTimeout(() => setStatus(''), 1500);
+    return;
   }
+  const target = found.closest('button, [role="button"], a[href]') || found;
+  // Some SPA frameworks (TikTok) only fire their handler on a full pointer
+  // event sequence, not on a bare .click(). Do both for maximum compatibility.
+  const opts = { bubbles: true, cancelable: true, view: window };
+  try { target.dispatchEvent(new PointerEvent('pointerdown', opts)); } catch {}
+  target.dispatchEvent(new MouseEvent('mousedown', opts));
+  try { target.dispatchEvent(new PointerEvent('pointerup',   opts)); } catch {}
+  target.dispatchEvent(new MouseEvent('mouseup',   opts));
+  target.click();
+  console.log('[NodScroll] liked (mouth-open) →', cfg.like,
+              '→ clicked:', target.tagName, target.getAttribute('aria-label') || '');
+  setStatus('❤ Liked!', 'info');
+  setTimeout(() => setStatus(''), 1500);
 }
 
 function fireNod(direction) {
