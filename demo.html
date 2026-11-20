@@ -7,12 +7,13 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body {
+    html {
       height: 100%;
       scroll-snap-type: y mandatory;
       overflow-y: scroll;
       font-family: system-ui, -apple-system, sans-serif;
     }
+    body { font-family: inherit; }
 
     .section {
       scroll-snap-align: start;
@@ -93,7 +94,36 @@
     #nod-collapse-btn:hover { color: #fff; }
 
     #nod-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 7px; }
-    #nod-body.collapsed { display: none; }
+    /* Collapsed: hide controls but keep the video painting offscreen so
+       MediaPipe still receives frames and nods keep scrolling. */
+    #nod-body.collapsed { padding: 0; gap: 0; }
+    #nod-body.collapsed > *:not(.nod-video-wrap) { display: none !important; }
+    #nod-body.collapsed > .nod-video-wrap {
+      position: absolute; left: -9999px; top: 0;
+      width: 160px; height: 90px; pointer-events: none;
+    }
+
+    .demo-bar {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(12, 12, 18, 0.78);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .demo-bar a { color: #fff; text-decoration: none; }
+    .demo-bar a:hover { color: #c8e6c9; }
+    #section-label { font-weight: 500; opacity: 0.8; }
 
     .nod-video-wrap {
       position: relative;
@@ -205,9 +235,14 @@
 </head>
 <body>
 
+  <div class="demo-bar">
+    <a href="/">← Nod Scroll</a>
+    <span id="section-label">1 / 10</span>
+  </div>
+
   <div class="section">
     <span>Section 1</span>
-    <span class="hint">Nod up ↑ to scroll</span>
+    <span class="hint">Nod up ↑ or press ↓ to scroll</span>
   </div>
   <div class="section">
     <span>Section 2</span>
@@ -287,11 +322,11 @@
       from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
 
     // ── Constants ──────────────────────────────────────────────────────────────
-    const NOD_DOWN_THRESHOLD  = 0.30;
-    const NOD_UP_THRESHOLD    = 0.10;
+    // Same thresholds as the extension: chin-drop is the "down" side,
+    // chin-rise is slightly more sensitive.
+    const THRESHOLD_DOWN      = 0.30;
+    const THRESHOLD_UP        = 0.22;
     const COOLDOWN_MS         = 800;
-    const MIN_NOD_DURATION_MS = 130;
-    const MAX_NOD_DURATION_MS = 1200;
     const SMOOTH_ALPHA        = 0.65;
     const BASELINE_ALPHA      = 0.985;
     const FPS_TARGET          = 30;
@@ -304,27 +339,34 @@
     let rafId           = null;
     let enabled         = false;
 
-    let nodState        = 'idle';   // 'idle' | 'armed' | 'cooldown'
-    let nodDirection    = null;     // 'down' | 'up' | null
-    let nodStartTime    = 0;
-    let peakAbsDelta    = 0;
+    let nodState        = 'idle';   // 'idle' | 'cooldown'
     let smoothedPitch   = null;
     let baseline        = null;
     let lastDelta       = 0;
 
     // ── Platform action ───────────────────────────────────────────────────────
-    function executeAction(direction) {
-      const sections = document.querySelectorAll('.section');
-      // Find current section by whichever has its top closest to viewport top
+    function currentSectionIndex(sections) {
       let current = 0, best = Infinity;
       sections.forEach((s, i) => {
         const d = Math.abs(s.getBoundingClientRect().top);
         if (d < best) { best = d; current = i; }
       });
+      return current;
+    }
+
+    function updateSectionLabel(index, total) {
+      const label = document.getElementById('section-label');
+      if (label) label.textContent = `${index + 1} / ${total}`;
+    }
+
+    function executeAction(direction) {
+      const sections = [...document.querySelectorAll('.section')];
+      const current = currentSectionIndex(sections);
       const target = direction === 'up'
         ? Math.min(current + 1, sections.length - 1)
         : Math.max(current - 1, 0);
       sections[target].scrollIntoView({ behavior: 'smooth' });
+      updateSectionLabel(target, sections.length);
     }
 
     // ── Pitch extraction ──────────────────────────────────────────────────────
@@ -354,7 +396,7 @@
     }
 
     // ── State machine ─────────────────────────────────────────────────────────
-    function processPitch(pitch, now) {
+    function processPitch(pitch) {
       if (smoothedPitch === null) { smoothedPitch = pitch; baseline = pitch; return; }
 
       smoothedPitch = smoothedPitch * SMOOTH_ALPHA + pitch * (1 - SMOOTH_ALPHA);
@@ -366,12 +408,12 @@
       const delta  = smoothedPitch - baseline;
       lastDelta    = delta;
       const sens   = getSensitivity();
-      const downTh   = NOD_DOWN_THRESHOLD / sens;
-      const returnTh = NOD_UP_THRESHOLD   / sens;
+      const downTh = THRESHOLD_DOWN / sens;
+      const upTh   = THRESHOLD_UP   / sens;
 
       if (nodState === 'idle') {
-        if (delta > downTh)       fireNod('down');
-        else if (delta < -downTh) fireNod('up');
+        if (delta > downTh)      fireNod('down');
+        else if (delta < -upTh)  fireNod('up');
       }
     }
 
@@ -411,11 +453,12 @@
 
       // Threshold marks
       const sens   = getSensitivity();
-      const downTh = NOD_DOWN_THRESHOLD / sens;
+      const downTh = THRESHOLD_DOWN / sens;
+      const upTh   = THRESHOLD_UP   / sens;
       const posEl  = document.getElementById('nod-mark-pos');
       const negEl  = document.getElementById('nod-mark-neg');
-      if (posEl) posEl.style.left = Math.min(Math.max((downTh  + 0.5) / 1.0 * 100, 0), 100) + '%';
-      if (negEl) negEl.style.left = Math.min(Math.max((-downTh + 0.5) / 1.0 * 100, 0), 100) + '%';
+      if (posEl) posEl.style.left = Math.min(Math.max(( downTh + 0.5) * 100, 0), 100) + '%';
+      if (negEl) negEl.style.left = Math.min(Math.max((-upTh   + 0.5) * 100, 0), 100) + '%';
     }
 
     // ── Detection loop ────────────────────────────────────────────────────────
@@ -430,7 +473,7 @@
         if (videoEl.readyState < 2) return;
         const result = faceLandmarker.detectForVideo(videoEl, ts);
         const p = computePitch(result);
-        if (p !== null) processPitch(p, Date.now());
+        if (p !== null) processPitch(p);
         updateUI();
       }
       rafId = requestAnimationFrame(loop);
@@ -531,21 +574,22 @@
         collapseBtn.textContent = collapsed ? '+' : '−';
       });
 
-      // Draggable header
+      // Draggable header (mouse and touch)
       let dragging = false;
       let dragOffX = 0, dragOffY = 0;
       let usingTopLeft = false;
 
-      header.addEventListener('mousedown', (e) => {
+      header.addEventListener('pointerdown', (e) => {
         if (e.target === collapseBtn) return;
         dragging = true;
+        header.setPointerCapture(e.pointerId);
         const rect = overlay.getBoundingClientRect();
         dragOffX = e.clientX - rect.left;
         dragOffY = e.clientY - rect.top;
         e.preventDefault();
       });
 
-      document.addEventListener('mousemove', (e) => {
+      header.addEventListener('pointermove', (e) => {
         if (!dragging) return;
         if (!usingTopLeft) {
           overlay.style.right  = 'auto';
@@ -556,7 +600,20 @@
         overlay.style.top  = (e.clientY - dragOffY) + 'px';
       });
 
-      document.addEventListener('mouseup', () => { dragging = false; });
+      const endDrag = () => { dragging = false; };
+      header.addEventListener('pointerup', endDrag);
+      header.addEventListener('pointercancel', endDrag);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target.closest && e.target.closest('input, textarea, #nod-overlay')) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') executeAction('up');
+        else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') executeAction('down');
+      });
+
+      window.addEventListener('scroll', () => {
+        const sections = [...document.querySelectorAll('.section')];
+        updateSectionLabel(currentSectionIndex(sections), sections.length);
+      }, { passive: true });
 
       // Toggle button
       toggleBtn.addEventListener('click', () => {
