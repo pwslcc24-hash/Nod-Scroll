@@ -30,16 +30,18 @@
       text-shadow: 0 2px 12px rgba(0,0,0,0.35);
       user-select: none;
     }
-    .section:nth-child(1)  { background: #e63946; }
-    .section:nth-child(2)  { background: #f4a261; }
-    .section:nth-child(3)  { background: #2a9d8f; }
-    .section:nth-child(4)  { background: #457b9d; }
-    .section:nth-child(5)  { background: #7b2d8b; }
-    .section:nth-child(6)  { background: #e76f51; }
-    .section:nth-child(7)  { background: #06d6a0; }
-    .section:nth-child(8)  { background: #118ab2; }
-    .section:nth-child(9)  { background: #ffd166; color: #333; }
-    .section:nth-child(10) { background: #ef476f; }
+    /* Count inside .feed only. A bar or overlay beside these sections
+       must not shift :nth-child, or the last section loses its background. */
+    .feed > .section:nth-child(1)  { background: #e63946; }
+    .feed > .section:nth-child(2)  { background: #f4a261; }
+    .feed > .section:nth-child(3)  { background: #2a9d8f; }
+    .feed > .section:nth-child(4)  { background: #457b9d; }
+    .feed > .section:nth-child(5)  { background: #7b2d8b; }
+    .feed > .section:nth-child(6)  { background: #e76f51; }
+    .feed > .section:nth-child(7)  { background: #06d6a0; }
+    .feed > .section:nth-child(8)  { background: #118ab2; }
+    .feed > .section:nth-child(9)  { background: #ffd166; color: #333; }
+    .feed > .section:nth-child(10) { background: #ef476f; }
 
     .section .hint {
       font-size: clamp(0.85rem, 2vw, 1.1rem);
@@ -80,6 +82,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.07);
       cursor: grab;
       user-select: none;
+      touch-action: none;
     }
     #nod-header:active { cursor: grabbing; }
     #nod-collapse-btn {
@@ -240,6 +243,7 @@
     <span id="section-label">1 / 10</span>
   </div>
 
+  <div class="feed">
   <div class="section">
     <span>Section 1</span>
     <span class="hint">Nod up ↑ or press ↓ to scroll</span>
@@ -279,6 +283,7 @@
   <div class="section">
     <span>Section 10</span>
     <span class="hint">Nod down ↓ to go back</span>
+  </div>
   </div>
 
   <!-- Overlay panel -->
